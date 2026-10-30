@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     llm_base_url: str | None = None  # AI proxy endpoint; empty = provider default
     llm_api_key: str = ""
     llm_model: str = "gemini-2.5-flash"
-    llm_timeout_seconds: float = 90.0
+    llm_timeout_seconds: float = 60.0
 
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/ai_invoice_analyzer"
     max_upload_mb: int = 10

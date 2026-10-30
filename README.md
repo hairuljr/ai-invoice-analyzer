@@ -62,7 +62,8 @@ OpenAI-compatible endpoint that serves a multimodal model (developed with Gemini
 ```bash
 # 1. Database
 createdb ai_invoice_analyzer
-psql -d ai_invoice_analyzer -f db/schema.sql   # optional: the app also creates the table on startup
+psql -d ai_invoice_analyzer -f db/schema.sql   # new DB: optional, the app creates the table on startup
+# existing DB from an earlier version: run db/migrations/*.sql in order (startup does not ALTER tables)
 
 # 2. Backend
 cd backend
@@ -90,7 +91,7 @@ and open http://localhost:5173 (Vite proxies `/api` to port 8000).
 | `LLM_BASE_URL` | empty (api.openai.com) | OpenAI-compatible endpoint, e.g. an AI proxy |
 | `LLM_API_KEY` | empty | API key for that endpoint. Never committed. |
 | `LLM_MODEL` | `gemini-2.5-flash` | Must accept PDF and images |
-| `LLM_TIMEOUT_SECONDS` | `90` | Per-request timeout; the SDK retries once on timeout/429/5xx |
+| `LLM_TIMEOUT_SECONDS` | `60` | Per-request timeout; the SDK retries once on timeout/429/5xx |
 | `DATABASE_URL` | `postgresql+psycopg://postgres:postgres@localhost:5432/ai_invoice_analyzer` | SQLAlchemy URL |
 | `MAX_UPLOAD_MB` | `10` | Upload size limit |
 
@@ -131,7 +132,7 @@ the scripts in `db/migrations/`, in order (idempotent, non-destructive).
 
 ```bash
 cd backend
-.venv/bin/python -m pytest              # 38 tests, no API key or Postgres needed (LLM mocked, SQLite in memory)
+.venv/bin/python -m pytest              # 50 tests, no API key or Postgres needed (LLM mocked, SQLite in memory)
 .venv/bin/python -m scripts.evaluate     # real LLM vs samples/expected.json golden set
 ```
 
@@ -156,6 +157,8 @@ validation, Numeric money, and a small React app served by FastAPI.
 - The checks catch inconsistent numbers, not a consistently misread invoice (e.g. a wrong vendor name).
 - Uploaded files are not stored, only the extracted data and the file hash.
 - No auth, no edit/delete or "mark as reviewed", no pagination beyond `limit`.
+- Two simultaneous uploads of the same new file can both call the AI and create two rows (the hash index is not
+  UNIQUE). The UI disables the button while processing; a UNIQUE constraint is the production fix.
 - No Docker setup yet (Docker was not available on the development machine, so it was not added untested).
 - Privacy: the full document is sent to an external LLM provider. Invoices to a hospital can contain personal
   data. This prototype does not claim compliance with UU PDP (Law 27/2022). See next steps.
