@@ -15,7 +15,7 @@ def main() -> None:
     path = Path(sys.argv[1])
     mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
     start = time.perf_counter()
-    result = extract_invoice(path.read_bytes(), mime, path.name)
+    result = extract_invoice(path.read_bytes(), mime)
     print(result.model_dump_json(indent=2))
     print(f"latency: {time.perf_counter() - start:.1f}s")
 

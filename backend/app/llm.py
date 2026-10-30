@@ -35,10 +35,10 @@ def get_client() -> OpenAI:
     )
 
 
-def _file_part(data: bytes, mime: str, filename: str) -> dict:
+def _file_part(data: bytes, mime: str) -> dict:
+    # PDFs also go through image_url: our proxy drops the "file" content part
+    # (model saw no document) but forwards a data:application/pdf URL to Gemini.
     data_url = f"data:{mime};base64,{base64.b64encode(data).decode()}"
-    if mime == "application/pdf":
-        return {"type": "file", "file": {"filename": filename, "file_data": data_url}}
     return {"type": "image_url", "image_url": {"url": data_url}}
 
 
@@ -48,14 +48,14 @@ def _strip_code_fence(text: str) -> str:
     return text.strip()
 
 
-def extract_invoice(data: bytes, mime: str, filename: str) -> InvoiceExtraction:
+def extract_invoice(data: bytes, mime: str) -> InvoiceExtraction:
     messages = [
         {"role": "system", "content": PROMPT},
         {
             "role": "user",
             "content": [
                 {"type": "text", "text": "Extract the data from this invoice."},
-                _file_part(data, mime, filename),
+                _file_part(data, mime),
             ],
         },
     ]
