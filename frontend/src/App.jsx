@@ -3,6 +3,7 @@ import { listInvoices, processInvoice } from "./api.js";
 
 const MAX_MB = 10;
 const ACCEPT = ".pdf,.jpg,.jpeg,.png";
+const ITEMS_PER_PAGE = 5;
 
 // Returns null for a missing amount, so callers decide how to show it ("-", "not found" or hidden).
 function formatAmount(amount, currency) {
@@ -60,29 +61,52 @@ function ReviewBadge({ invoice }) {
   );
 }
 
+// Client-side pagination: all items are already in the response, we only show one page at a time.
+// The parent passes key={invoice.id}, so the page resets to 1 when another invoice is shown.
 function LineItems({ items, currency }) {
+  const [page, setPage] = useState(0);
   if (items.length === 0) return null;
+
+  const pageCount = Math.ceil(items.length / ITEMS_PER_PAGE);
+  const start = page * ITEMS_PER_PAGE;
+  const visible = items.slice(start, start + ITEMS_PER_PAGE);
+
   return (
-    <table className="items">
-      <thead>
-        <tr>
-          <th>Item</th>
-          <th className="num">Qty</th>
-          <th className="num">Unit price</th>
-          <th className="num">Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((item, i) => (
-          <tr key={i}>
-            <td>{item.description ?? "-"}</td>
-            <td className="num">{item.quantity ?? "-"}</td>
-            <td className="num">{formatAmount(item.unit_price, currency) ?? "-"}</td>
-            <td className="num">{formatAmount(item.amount, currency) ?? "-"}</td>
+    <>
+      <table className="items">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th className="num">Qty</th>
+            <th className="num">Unit price</th>
+            <th className="num">Amount</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {visible.map((item, i) => (
+            <tr key={start + i}>
+              <td>{item.description ?? "-"}</td>
+              <td className="num">{item.quantity ?? "-"}</td>
+              <td className="num">{formatAmount(item.unit_price, currency) ?? "-"}</td>
+              <td className="num">{formatAmount(item.amount, currency) ?? "-"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {pageCount > 1 && (
+        <div className="pager">
+          <button type="button" onClick={() => setPage(page - 1)} disabled={page === 0}>
+            Prev
+          </button>
+          <span>
+            Items {start + 1}-{start + visible.length} of {items.length}
+          </span>
+          <button type="button" onClick={() => setPage(page + 1)} disabled={page === pageCount - 1}>
+            Next
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -122,7 +146,7 @@ function ResultCard({ invoice, reused }) {
           </div>
         ))}
       </dl>
-      <LineItems items={invoice.line_items} currency={invoice.currency} />
+      <LineItems key={invoice.id} items={invoice.line_items} currency={invoice.currency} />
     </section>
   );
 }

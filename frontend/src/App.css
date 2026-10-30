@@ -40,3 +40,5 @@ tbody tr:hover, tr.selected { background: #eef6f2; }
 .notes { background: #fff8e6; border-left: 3px solid #d99a00; margin: 0 0 12px; padding: 8px 12px 8px 28px; font-size: 0.9rem; }
 table.items { margin-top: 16px; }
 table.items tbody tr { cursor: default; background: none; }
+.pager { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 8px; font-size: 0.85rem; color: #616e7c; }
+.pager button { padding: 4px 10px; }
