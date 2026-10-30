@@ -38,7 +38,7 @@ docs/              recorded API responses and evaluation output
 
 ## Setup
 
-Prerequisites: Python 3.12+ (developed on 3.15), Node 20+, PostgreSQL 14+, and an API key for an
+Prerequisites: Python 3.12+ (developed on 3.15), Bun 1.1+ (or Node 20+), PostgreSQL 14+, and an API key for an
 OpenAI-compatible endpoint that serves a multimodal model (developed with Gemini through an AI proxy).
 
 ```bash
@@ -54,15 +54,15 @@ cp .env.example .env    # then fill in LLM_BASE_URL, LLM_API_KEY, LLM_MODEL, DAT
 
 # 3. Frontend (built once, then served by FastAPI)
 cd ../frontend
-npm install
-npm run build
+bun install
+bun run build
 
 # 4. Run
 cd ../backend
 .venv/bin/uvicorn app.main:app --port 8000
 ```
 
-Open http://localhost:8000. For frontend development with hot reload, run `npm run dev` in `frontend/`
+Open http://localhost:8000. For frontend development with hot reload, run `bun run dev` in `frontend/`
 and open http://localhost:5173 (Vite proxies `/api` to port 8000).
 
 ### Environment variables (`backend/.env`)
