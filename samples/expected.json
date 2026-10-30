@@ -3,21 +3,40 @@
     "vendor_name": "PT Medika Sejahtera Abadi",
     "invoice_number": "INV-2026-00125",
     "invoice_date": "2026-10-01",
+    "subtotal": 14950000,
+    "tax_amount": 1644500,
     "total_amount": 16594500,
-    "currency": "IDR"
+    "currency": "IDR",
+    "needs_review": false
   },
   "invoice_farma.pdf": {
     "vendor_name": "CV Farma Nusantara",
     "invoice_number": "FN/2026/X/0042",
     "invoice_date": "2026-10-15",
+    "subtotal": 5850000,
+    "tax_amount": 643500,
     "total_amount": 6493500,
-    "currency": "IDR"
+    "currency": "IDR",
+    "needs_review": false
   },
   "invoice_lab.jpg": {
     "vendor_name": "PT Lab Diagnostik Prima",
     "invoice_number": "LDP-7781",
     "invoice_date": "2026-10-20",
+    "subtotal": 10900000,
+    "tax_amount": 1199000,
     "total_amount": 12099000,
-    "currency": "IDR"
+    "currency": "IDR",
+    "needs_review": false
+  },
+  "invoice_wrong_total.pdf": {
+    "vendor_name": "PT Sarana Steril Indonesia",
+    "invoice_number": "SSI-2026-0311",
+    "invoice_date": "2026-10-22",
+    "subtotal": 6300000,
+    "tax_amount": 693000,
+    "total_amount": 7000000,
+    "currency": "IDR",
+    "needs_review": true
   }
 }

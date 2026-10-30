@@ -14,3 +14,9 @@
 | Sync `def` endpoint | FastAPI runs it in a threadpool, so the blocking LLM call does not block the event loop | `async` + async client: better at scale, more to explain |
 | React (Vite) single page, built and served by FastAPI | The brief asks for React; one origin, no CORS; one component file is easy to follow | Next.js: unnecessary for one page |
 | LLM mocked in tests, real LLM only in `scripts/evaluate.py` | Tests are fast, free and deterministic; evaluation measures real accuracy separately | Calling the real model in tests |
+| LLM only reads; code verifies arithmetic (lines, subtotal, tax, total) | LLMs are unreliable at arithmetic and may silently "fix" numbers; deterministic checks are testable and explainable | Ask the LLM to validate its own output |
+| Problems flag `needs_review` instead of rejecting | Finance still gets the data, but knows which invoices to check by hand | Reject with 422: loses work, and a real invoice can genuinely contain an error |
+| Absolute tolerance of 1 currency unit | A relative 0.1% tolerance hid a Rp7,000 error on a Rp7,000,000 invoice (caught by a test) | Relative tolerance |
+| SHA-256 of the file; identical upload returns stored result (200) | No second LLM call for the same file: lower cost and latency, consistent answers | Always re-process |
+| Same vendor + invoice number is flagged, not blocked | Could be a real duplicate (double payment risk) or a legitimate re-scan; a person decides | Unique constraint |
+| Retry once when the model's JSON fails validation | Sampling can differ between calls; a second try fixes most format slips cheaply | No retry (more 502s) or many retries (cost, latency) |

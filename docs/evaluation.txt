@@ -1,10 +1,14 @@
-invoice_medika.pdf: OK [8.1s]
-invoice_farma.pdf: OK [6.9s]
-invoice_lab.jpg: OK [7.3s]
+invoice_medika.pdf: OK [8.8s]
+invoice_farma.pdf: OK [8.8s]
+invoice_lab.jpg: OK [9.8s]
+invoice_wrong_total.pdf: OK [9.0s]
 
 Field accuracy:
-  vendor_name     3/3
-  invoice_number  3/3
-  invoice_date    3/3
-  total_amount    3/3
-  currency        3/3
+  vendor_name     4/4
+  invoice_number  4/4
+  invoice_date    4/4
+  subtotal        4/4
+  tax_amount      4/4
+  total_amount    4/4
+  currency        4/4
+  needs_review    4/4
