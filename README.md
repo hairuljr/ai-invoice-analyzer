@@ -113,6 +113,10 @@ curl http://localhost:8000/health
 
 Interactive API docs: http://localhost:8000/docs. Real recorded responses: [docs/api_examples.md](docs/api_examples.md).
 
+Screenshots (taken during development; review notes were later translated to Bahasa Indonesia and empty
+amount rows are now hidden): [USD invoice with line items and history](docs/screenshots/ui-usd-invoice-result.png),
+[wrong total flagged for review](docs/screenshots/ui-wrong-total-needs-review.png).
+
 | Endpoint | Success | Errors |
 |---|---|---|
 | `POST /api/invoices/process` (multipart `file`) | `201` + stored invoice; `200` if this exact file was processed before | `400` empty, `413` too large, `415` wrong type or content does not match extension, `422` not an invoice, `502` AI failed or returned invalid output, `503` database unavailable |
