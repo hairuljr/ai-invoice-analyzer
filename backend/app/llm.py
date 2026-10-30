@@ -18,6 +18,7 @@ from .schemas import InvoiceExtraction
 logger = logging.getLogger(__name__)
 
 PROMPT = (Path(__file__).parent / "prompts" / "extract_invoice.txt").read_text()
+MAX_ATTEMPTS = 2
 
 
 class ExtractionError(Exception):
@@ -59,26 +60,30 @@ def extract_invoice(data: bytes, mime: str) -> InvoiceExtraction:
             ],
         },
     ]
-    try:
-        resp = get_client().chat.completions.create(
-            model=settings.llm_model,
-            messages=messages,
-            temperature=0,
-            response_format={
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "invoice_extraction",
-                    "schema": InvoiceExtraction.model_json_schema(),
+    # Transport errors are retried by the SDK (max_retries). Here we retry once more
+    # when the model answers but the output fails validation, since sampling can differ.
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            resp = get_client().chat.completions.create(
+                model=settings.llm_model,
+                messages=messages,
+                temperature=0,
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "invoice_extraction",
+                        "schema": InvoiceExtraction.model_json_schema(),
+                    },
                 },
-            },
-        )
-    except OpenAIError as e:
-        logger.error("LLM request failed: %s", e)
-        raise ExtractionError(f"AI service error: {e.__class__.__name__}") from e
+            )
+        except OpenAIError as e:
+            logger.error("LLM request failed: %s", e)
+            raise ExtractionError(f"AI service error: {e.__class__.__name__}") from e
 
-    content = resp.choices[0].message.content or ""
-    try:
-        return InvoiceExtraction.model_validate_json(_strip_code_fence(content))
-    except ValidationError as e:
-        logger.error("LLM returned invalid JSON: %.500s", content)
-        raise ExtractionError("AI returned an invalid response") from e
+        content = resp.choices[0].message.content or ""
+        try:
+            return InvoiceExtraction.model_validate_json(_strip_code_fence(content))
+        except ValidationError:
+            logger.warning("LLM returned invalid JSON (attempt %d/%d): %.300s", attempt, MAX_ATTEMPTS, content)
+
+    raise ExtractionError("AI returned an invalid response")

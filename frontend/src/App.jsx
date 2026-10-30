@@ -29,7 +29,8 @@ function UploadForm({ onProcessed }) {
     setLoading(true);
     setError("");
     try {
-      onProcessed(await processInvoice(file));
+      const { invoice, reused } = await processInvoice(file);
+      onProcessed(invoice, reused);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -50,18 +51,64 @@ function UploadForm({ onProcessed }) {
   );
 }
 
-function ResultCard({ invoice }) {
+function ReviewBadge({ invoice }) {
+  return invoice.needs_review ? (
+    <span className="badge warn">Needs review</span>
+  ) : (
+    <span className="badge ok">Checks passed</span>
+  );
+}
+
+function LineItems({ items, currency }) {
+  if (items.length === 0) return null;
+  return (
+    <table className="items">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th className="num">Qty</th>
+          <th className="num">Unit price</th>
+          <th className="num">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((item, i) => (
+          <tr key={i}>
+            <td>{item.description ?? "-"}</td>
+            <td className="num">{item.quantity ?? "-"}</td>
+            <td className="num">{formatAmount(item.unit_price, currency)}</td>
+            <td className="num">{formatAmount(item.amount, currency)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function ResultCard({ invoice, reused }) {
   const rows = [
     ["Vendor", invoice.vendor_name],
     ["Invoice number", invoice.invoice_number],
     ["Invoice date", invoice.invoice_date],
-    ["Total amount", formatAmount(invoice.total_amount, invoice.currency)],
     ["Items", invoice.item_description],
+    ["Subtotal", formatAmount(invoice.subtotal, invoice.currency)],
+    ["Tax", formatAmount(invoice.tax_amount, invoice.currency)],
+    ["Total amount", formatAmount(invoice.total_amount, invoice.currency)],
     ["File", invoice.original_filename],
   ];
   return (
     <section className="card">
-      <h2>Result #{invoice.id}</h2>
+      <h2>
+        Result #{invoice.id} <ReviewBadge invoice={invoice} />
+      </h2>
+      {reused && <p className="hint">This file was already processed, showing the stored result (no new AI call).</p>}
+      {invoice.review_notes.length > 0 && (
+        <ul className="notes">
+          {invoice.review_notes.map((note) => (
+            <li key={note}>{note}</li>
+          ))}
+        </ul>
+      )}
       <p className="summary">{invoice.summary}</p>
       <dl>
         {rows.map(([label, value]) => (
@@ -71,6 +118,7 @@ function ResultCard({ invoice }) {
           </div>
         ))}
       </dl>
+      <LineItems items={invoice.line_items} currency={invoice.currency} />
     </section>
   );
 }
@@ -86,6 +134,7 @@ function HistoryTable({ invoices, selectedId, onSelect }) {
           <th>Invoice no.</th>
           <th>Date</th>
           <th className="num">Total</th>
+          <th>Status</th>
           <th>Processed at</th>
         </tr>
       </thead>
@@ -97,6 +146,9 @@ function HistoryTable({ invoices, selectedId, onSelect }) {
             <td>{inv.invoice_number ?? "-"}</td>
             <td>{inv.invoice_date ?? "-"}</td>
             <td className="num">{formatAmount(inv.total_amount, inv.currency)}</td>
+            <td>
+              <ReviewBadge invoice={inv} />
+            </td>
             <td>{new Date(inv.created_at).toLocaleString("id-ID")}</td>
           </tr>
         ))}
@@ -108,6 +160,7 @@ function HistoryTable({ invoices, selectedId, onSelect }) {
 export default function App() {
   const [invoices, setInvoices] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [reused, setReused] = useState(false);
   const [historyError, setHistoryError] = useState("");
 
   useEffect(() => {
@@ -116,9 +169,16 @@ export default function App() {
       .catch((err) => setHistoryError(err.message));
   }, []);
 
-  function handleProcessed(invoice) {
+  function handleProcessed(invoice, wasReused) {
     setSelected(invoice);
-    setInvoices((prev) => [invoice, ...prev]); // newest first, no refetch needed
+    setReused(wasReused);
+    // Newest first, no refetch needed. A reused result is already in the list.
+    if (!wasReused) setInvoices((prev) => [invoice, ...prev]);
+  }
+
+  function handleSelect(invoice) {
+    setSelected(invoice);
+    setReused(false);
   }
 
   return (
@@ -126,13 +186,13 @@ export default function App() {
       <h1>AI Invoice Analyzer</h1>
       <div className="top">
         <UploadForm onProcessed={handleProcessed} />
-        {selected ? <ResultCard invoice={selected} /> : <section className="card hint">Upload an invoice to see the extracted data.</section>}
+        {selected ? <ResultCard invoice={selected} reused={reused} /> : <section className="card hint">Upload an invoice to see the extracted data.</section>}
       </div>
       <h2>History</h2>
       {historyError ? (
         <p className="error">{historyError}</p>
       ) : (
-        <HistoryTable invoices={invoices} selectedId={selected?.id} onSelect={setSelected} />
+        <HistoryTable invoices={invoices} selectedId={selected?.id} onSelect={handleSelect} />
       )}
     </main>
   );

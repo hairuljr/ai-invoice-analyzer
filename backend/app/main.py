@@ -1,16 +1,18 @@
+import hashlib
 import logging
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from . import models
+from .checks import review_notes
 from .config import settings
 from .db import Base, engine, get_db
 from .llm import ExtractionError, extract_invoice
@@ -58,8 +60,13 @@ def health(db: Session = Depends(get_db)):
 
 # Plain `def` (not async): FastAPI runs it in a threadpool, so the blocking LLM call
 # does not freeze the event loop for other requests.
-@app.post("/api/invoices/process", response_model=InvoiceOut, status_code=201)
-def process_invoice(file: UploadFile, db: Session = Depends(get_db)):
+@app.post(
+    "/api/invoices/process",
+    response_model=InvoiceOut,
+    status_code=201,
+    responses={200: {"description": "This exact file was processed before; the stored result is returned"}},
+)
+def process_invoice(file: UploadFile, response: Response, db: Session = Depends(get_db)):
     max_bytes = settings.max_upload_mb * 1024 * 1024
     data = file.file.read(max_bytes + 1)  # read one byte past the limit to detect oversize files
     filename = file.filename or ""
@@ -68,17 +75,45 @@ def process_invoice(file: UploadFile, db: Session = Depends(get_db)):
     except UploadError as e:
         raise HTTPException(e.status_code, e.message)
 
+    file_hash = hashlib.sha256(data).hexdigest()
+    cached = db.scalars(select(models.Invoice).where(models.Invoice.file_sha256 == file_hash).limit(1)).first()
+    if cached:
+        logger.info("Same file as invoice id=%d, skipping LLM call", cached.id)
+        response.status_code = 200
+        return cached
+
     try:
         extracted = extract_invoice(data, mime)
     except ExtractionError as e:
         raise HTTPException(502, f"Could not extract invoice data: {e}")
 
-    invoice = models.Invoice(**extracted.model_dump(), original_filename=filename)
+    notes = review_notes(extracted)
+    duplicate = find_same_invoice(db, extracted.vendor_name, extracted.invoice_number)
+    if duplicate:
+        notes.append(f"Possible duplicate of invoice #{duplicate.id} (same vendor and invoice number).")
+
+    invoice = models.Invoice(
+        **extracted.model_dump(),
+        needs_review=bool(notes),
+        review_notes=notes,
+        original_filename=filename,
+        file_sha256=file_hash,
+    )
     db.add(invoice)
     db.commit()
     db.refresh(invoice)
-    logger.info("Stored invoice id=%d from %s", invoice.id, filename)
+    logger.info("Stored invoice id=%d from %s (needs_review=%s)", invoice.id, filename, invoice.needs_review)
     return invoice
+
+
+def find_same_invoice(db: Session, vendor_name: str | None, invoice_number: str | None) -> models.Invoice | None:
+    if not vendor_name or not invoice_number:
+        return None
+    stmt = select(models.Invoice).where(
+        func.lower(models.Invoice.vendor_name) == vendor_name.lower(),
+        models.Invoice.invoice_number == invoice_number,
+    )
+    return db.scalars(stmt.limit(1)).first()
 
 
 @app.get("/api/invoices", response_model=list[InvoiceOut])

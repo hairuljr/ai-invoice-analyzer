@@ -84,3 +84,40 @@ def test_llm_failure_returns_502_and_stores_nothing(client, monkeypatch):
 
 def test_unknown_invoice_returns_404(client):
     assert client.get("/api/invoices/999").status_code == 404
+
+
+def test_same_file_reuses_stored_result_without_llm_call(client, monkeypatch):
+    first = upload(client)
+    assert first.status_code == 201
+
+    def must_not_be_called(data, mime):
+        raise AssertionError("LLM should not be called for a file already processed")
+
+    monkeypatch.setattr(main, "extract_invoice", must_not_be_called)
+    second = upload(client)
+    assert second.status_code == 200
+    assert second.json()["id"] == first.json()["id"]
+    assert len(client.get("/api/invoices").json()) == 1
+
+
+def test_same_invoice_in_different_file_is_flagged_as_duplicate(client):
+    first = upload(client).json()
+    second = upload(client, name="scan.pdf", data=PDF + b" rescanned").json()
+    assert first["needs_review"] is False
+    assert second["needs_review"] is True
+    assert f"Possible duplicate of invoice #{first['id']}" in second["review_notes"][0]
+
+
+def test_wrong_total_is_stored_with_review_flag(client, monkeypatch):
+    monkeypatch.setattr(
+        main,
+        "extract_invoice",
+        lambda data, mime: InvoiceExtraction(
+            vendor_name="PT Sarana", invoice_number="SSI-1", invoice_date="2026-10-22",
+            subtotal=6_300_000, tax_amount=693_000, total_amount=7_000_000, summary="s",
+        ),
+    )
+    body = upload(client).json()
+    assert body["needs_review"] is True
+    assert "total is 7,000,000" in body["review_notes"][0]
+    assert client.get(f"/api/invoices/{body['id']}").json()["review_notes"] == body["review_notes"]

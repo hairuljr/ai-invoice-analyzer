@@ -45,3 +45,18 @@ def test_invalid_output_raises_extraction_error(monkeypatch, content):
 @pytest.mark.parametrize("raw", ["01/10/2026", "1 Oktober 2026", "not a date"])
 def test_non_iso_date_becomes_null(raw):
     assert InvoiceExtraction(invoice_date=raw, summary="s").invoice_date is None
+
+
+def test_retries_once_on_invalid_output(monkeypatch):
+    replies = iter(["not json", VALID])
+    calls = []
+
+    def create(**kwargs):
+        calls.append(1)
+        content = next(replies)
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=content))])
+
+    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    monkeypatch.setattr(llm, "get_client", lambda: client)
+    assert extract_invoice(b"%PDF-", "application/pdf").vendor_name == "PT Medika"
+    assert len(calls) == 2

@@ -9,10 +9,13 @@ async function parse(response) {
   return body;
 }
 
+// Returns { invoice, reused }. The backend answers 200 instead of 201 when this exact file
+// was processed before and the stored result is returned without calling the AI again.
 export async function processInvoice(file) {
   const form = new FormData();
   form.append("file", file);
-  return parse(await fetch("/api/invoices/process", { method: "POST", body: form }));
+  const response = await fetch("/api/invoices/process", { method: "POST", body: form });
+  return { invoice: await parse(response), reused: response.status === 200 };
 }
 
 export async function listInvoices() {

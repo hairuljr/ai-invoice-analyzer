@@ -49,6 +49,20 @@ INVOICES = [
             ("Kalibrasi alat analyzer", 1, 1_500_000),
         ],
     },
+    {
+        # Printed total is deliberately wrong, to demo the arithmetic check / needs_review flag.
+        "file": "invoice_wrong_total.pdf",
+        "vendor": "PT Sarana Steril Indonesia",
+        "address": "Jl. Industri Raya No. 8, Cikarang",
+        "number": "SSI-2026-0311",
+        "date": "22 Oktober 2026",
+        "due": "21 November 2026",
+        "items": [
+            ("Jasa sterilisasi instrumen (set)", 120, 35_000),
+            ("Indikator kimia sterilisasi (pack)", 10, 210_000),
+        ],
+        "printed_total": 7_000_000,
+    },
 ]
 
 TAX_RATE = 0.11
@@ -79,13 +93,13 @@ def lines_for(inv: dict) -> list[str]:
         "",
         f"{'Subtotal':<53}{rupiah(subtotal):>15}",
         f"{'PPN 11%':<53}{rupiah(tax):>15}",
-        f"{'TOTAL':<53}{rupiah(subtotal + tax):>15}",
+        f"{'TOTAL':<53}{rupiah(inv.get('printed_total', subtotal + tax)):>15}",
     ]
     return rows
 
 
 def write_pdf(path: Path, rows: list[str]) -> None:
-    c = canvas.Canvas(str(path), pagesize=A4)
+    c = canvas.Canvas(str(path), pagesize=A4, invariant=1)  # deterministic bytes (no timestamp)
     y = A4[1] - 60
     for i, row in enumerate(rows):
         is_vendor_line = i == 0
