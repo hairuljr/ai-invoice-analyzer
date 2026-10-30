@@ -94,7 +94,7 @@ def process_invoice(file: UploadFile, response: Response, db: Session = Depends(
     notes = review_notes(extracted)
     duplicate = find_same_invoice(db, extracted.vendor_name, extracted.invoice_number)
     if duplicate:
-        notes.append(f"Possible duplicate of invoice #{duplicate.id} (same vendor and invoice number).")
+        notes.append(f"Kemungkinan duplikat invoice #{duplicate.id} (vendor dan nomor invoice sama). Periksa sebelum dibayar.")
 
     invoice = models.Invoice(
         **extracted.model_dump(exclude={"is_invoice"}),

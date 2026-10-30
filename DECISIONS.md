@@ -25,3 +25,5 @@
 | Non-invoice -> `422`, not stored | Keeps finance history clean; the AI's explanation is returned to the user | Store with all fields null (junk rows) |
 | A JPEG renamed to `.pdf` is rejected (`415`) | Extension and content must agree; a mismatch usually means a corrupt or tampered file, and rejecting is the safer default | Accept and use the sniffed type |
 | Lists that the model returns as `null` become `[]` | The model sent `line_items: null` for a non-invoice and the whole extraction failed; fixed in the schema so it holds for any model | Only tell the prompt to use `[]` |
+| Review notes in Bahasa Indonesia, Indonesian number format, with the gap and the next action | Finance reads them; same format as the amounts in the UI; "selisih Rp 7.000. Periksa dokumen asli." says how big the problem is and what to do | English notes with raw numbers |
+| The AI summary is not corrected when a check fails | The summary is the model's reading of the document; the review banner (from code) is the source of truth for the numbers | Regenerate or patch the summary |

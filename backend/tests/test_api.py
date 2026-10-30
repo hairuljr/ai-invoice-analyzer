@@ -105,7 +105,7 @@ def test_same_invoice_in_different_file_is_flagged_as_duplicate(client):
     second = upload(client, name="scan.pdf", data=PDF + b" rescanned").json()
     assert first["needs_review"] is False
     assert second["needs_review"] is True
-    assert f"Possible duplicate of invoice #{first['id']}" in second["review_notes"][0]
+    assert f"Kemungkinan duplikat invoice #{first['id']}" in second["review_notes"][0]
 
 
 def test_wrong_total_is_stored_with_review_flag(client, monkeypatch):
@@ -119,7 +119,7 @@ def test_wrong_total_is_stored_with_review_flag(client, monkeypatch):
     )
     body = upload(client).json()
     assert body["needs_review"] is True
-    assert "total is 7,000,000" in body["review_notes"][0]
+    assert "Total tercetak Rp 7.000.000" in body["review_notes"][0]
     assert client.get(f"/api/invoices/{body['id']}").json()["review_notes"] == body["review_notes"]
 
 

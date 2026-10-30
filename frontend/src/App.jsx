@@ -4,8 +4,9 @@ import { listInvoices, processInvoice } from "./api.js";
 const MAX_MB = 10;
 const ACCEPT = ".pdf,.jpg,.jpeg,.png";
 
+// Returns null for a missing amount, so callers decide how to show it ("-", "not found" or hidden).
 function formatAmount(amount, currency) {
-  if (amount == null) return "-";
+  if (amount == null) return null;
   try {
     return new Intl.NumberFormat("id-ID", { style: "currency", currency: currency || "IDR" }).format(amount);
   } catch {
@@ -76,8 +77,8 @@ function LineItems({ items, currency }) {
           <tr key={i}>
             <td>{item.description ?? "-"}</td>
             <td className="num">{item.quantity ?? "-"}</td>
-            <td className="num">{formatAmount(item.unit_price, currency)}</td>
-            <td className="num">{formatAmount(item.amount, currency)}</td>
+            <td className="num">{formatAmount(item.unit_price, currency) ?? "-"}</td>
+            <td className="num">{formatAmount(item.amount, currency) ?? "-"}</td>
           </tr>
         ))}
       </tbody>
@@ -91,12 +92,14 @@ function ResultCard({ invoice, reused }) {
     ["Invoice number", invoice.invoice_number],
     ["Invoice date", invoice.invoice_date],
     ["Items", invoice.item_description],
-    ["Subtotal", formatAmount(invoice.subtotal, invoice.currency)],
-    ["Discount", formatAmount(invoice.discount_amount, invoice.currency)],
-    ["Tax", formatAmount(invoice.tax_amount, invoice.currency)],
+    // Optional breakdown lines (third element true) are hidden when the invoice has none;
+    // required fields stay visible and show "not found".
+    ["Subtotal", formatAmount(invoice.subtotal, invoice.currency), true],
+    ["Discount", formatAmount(invoice.discount_amount, invoice.currency), true],
+    ["Tax", formatAmount(invoice.tax_amount, invoice.currency), true],
     ["Total amount", formatAmount(invoice.total_amount, invoice.currency)],
     ["File", invoice.original_filename],
-  ];
+  ].filter(([, value, optional]) => !(optional && value == null));
   return (
     <section className="card">
       <h2>
@@ -146,7 +149,7 @@ function HistoryTable({ invoices, selectedId, onSelect }) {
             <td>{inv.vendor_name ?? "-"}</td>
             <td>{inv.invoice_number ?? "-"}</td>
             <td>{inv.invoice_date ?? "-"}</td>
-            <td className="num">{formatAmount(inv.total_amount, inv.currency)}</td>
+            <td className="num">{formatAmount(inv.total_amount, inv.currency) ?? "-"}</td>
             <td>
               <ReviewBadge invoice={inv} />
             </td>

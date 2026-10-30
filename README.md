@@ -25,7 +25,9 @@ Browser (React)                 FastAPI                                LLM (Gemi
 - **Rejects non-invoices.** The model also answers `is_invoice`; a letter or memo gets `422` and is not stored.
 - **Verifies instead of trusting.** The LLM only reads; code checks the arithmetic (qty x unit price = amount,
   sum of lines = subtotal, subtotal - discount + tax = total), required fields, and whether the same vendor + invoice
-  number was already recorded. Any problem sets `needs_review = true` with human-readable `review_notes`. The
+  number was already recorded. Any problem sets `needs_review = true` with `review_notes` in Bahasa Indonesia that state the gap and the next
+  action, e.g. "Total tercetak Rp 7.000.000, tetapi subtotal - diskon + pajak = Rp 6.993.000 (selisih Rp 7.000).
+  Periksa dokumen asli." The
   invoice is still saved, so finance gets the data but knows to check it.
 - **Does not pay twice.** A SHA-256 hash of the file is stored; uploading the identical file again returns the
   stored result (`200`) without calling the LLM.
@@ -129,7 +131,7 @@ the scripts in `db/migrations/`, in order (idempotent, non-destructive).
 
 ```bash
 cd backend
-.venv/bin/python -m pytest              # 36 tests, no API key or Postgres needed (LLM mocked, SQLite in memory)
+.venv/bin/python -m pytest              # 38 tests, no API key or Postgres needed (LLM mocked, SQLite in memory)
 .venv/bin/python -m scripts.evaluate     # real LLM vs samples/expected.json golden set
 ```
 
