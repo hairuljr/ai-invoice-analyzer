@@ -70,7 +70,8 @@ def review_notes(ext: InvoiceExtraction) -> list[str]:
             )
 
     if ext.subtotal is not None and ext.total_amount is not None:
-        computed = ext.subtotal - (ext.discount_amount or 0) + (ext.tax_amount or 0)
+        # abs(): invoices often print the discount as "-500.000"; it is subtracted either way.
+        computed = ext.subtotal - abs(ext.discount_amount or 0) + (ext.tax_amount or 0)
         if not _close(computed, ext.total_amount):
             notes.append(
                 f"Total tercetak {money(ext.total_amount)}, tetapi subtotal - diskon + pajak = {money(computed)}"

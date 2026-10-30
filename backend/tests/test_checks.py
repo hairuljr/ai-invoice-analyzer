@@ -92,3 +92,8 @@ def test_discount_is_subtracted_before_comparing_total():
     # Real edge case: 5% discount, then 11% PPN on the discounted amount.
     ext = make(line_items=[], subtotal=137_352_000, discount_amount=6_867_600, tax_amount=14_353_284, total_amount=144_837_684)
     assert review_notes(ext) == []
+
+
+def test_discount_printed_as_negative_is_still_subtracted():
+    ext = make(line_items=[], subtotal=137_352_000, discount_amount=-6_867_600, tax_amount=14_353_284, total_amount=144_837_684)
+    assert review_notes(ext) == []
