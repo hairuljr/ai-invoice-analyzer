@@ -1,0 +1,6 @@
+-r requirements.txt
+pytest==9.2.0
+httpx==0.28.1  # required by FastAPI TestClient
+# only used by scripts/make_samples.py to generate dummy invoices
+reportlab==5.1.0
+pillow==13.0.0
