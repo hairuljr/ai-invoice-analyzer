@@ -100,7 +100,7 @@ def process_invoice(file: UploadFile, response: Response, db: Session = Depends(
         **extracted.model_dump(exclude={"is_invoice"}),
         needs_review=bool(notes),
         review_notes=notes,
-        original_filename=filename,
+        original_filename=filename[:255],  # VARCHAR(255); the client controls this value
         file_sha256=file_hash,
     )
     db.add(invoice)

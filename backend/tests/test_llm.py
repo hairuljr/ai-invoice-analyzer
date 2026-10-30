@@ -83,3 +83,21 @@ def test_non_openai_exception_becomes_extraction_error(monkeypatch):
     monkeypatch.setattr(llm, "get_client", lambda: client)
     with pytest.raises(ExtractionError, match="ValueError"):
         extract_invoice(b"%PDF-", "application/pdf")
+
+
+@pytest.mark.parametrize(
+    "raw, expected",
+    [("IDR", "IDR"), ("usd", "USD"), ("Rp.", "IDR"), ("RUPIAH", "IDR"), ("US Dollar", None), ("", None), (None, None)],
+)
+def test_currency_is_normalized_to_iso_code_or_null(raw, expected):
+    assert InvoiceExtraction(currency=raw, summary="s").currency == expected
+
+
+def test_long_strings_are_cut_to_column_length():
+    ext = InvoiceExtraction(vendor_name="V" * 300, invoice_number="N" * 150, summary="s")
+    assert len(ext.vendor_name) == 255 and len(ext.invoice_number) == 100
+
+
+def test_nan_amount_is_rejected():
+    with pytest.raises(ValueError):
+        InvoiceExtraction.model_validate_json('{"total_amount": NaN, "summary": "s"}')

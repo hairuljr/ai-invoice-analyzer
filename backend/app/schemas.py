@@ -1,9 +1,17 @@
+import re
 from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+# Must match the VARCHAR lengths in models.py / db/schema.sql, so an over-long value is cut here
+# instead of failing the INSERT (a misleading 503 after the AI call was already paid for).
+MAX_LENGTHS = {"vendor_name": 255, "invoice_number": 100}
+CURRENCY_ALIASES = {"RP": "IDR", "RUPIAH": "IDR"}
+
 
 class LineItem(BaseModel):
+    model_config = ConfigDict(allow_inf_nan=False)  # NaN/Infinity is not a valid amount
+
     description: str | None = None
     quantity: float | None = None
     unit_price: float | None = None
@@ -12,6 +20,8 @@ class LineItem(BaseModel):
 
 class InvoiceExtraction(BaseModel):
     """Structured output the LLM must return. Also used to validate the LLM response."""
+
+    model_config = ConfigDict(allow_inf_nan=False)  # NaN/Infinity is not a valid amount
 
     is_invoice: bool = Field(True, description="false if the document is not an invoice or bill")
     vendor_name: str | None = Field(None, description="Company that issued the invoice")
@@ -33,6 +43,21 @@ class InvoiceExtraction(BaseModel):
     def null_list_to_empty(cls, v: object) -> object:
         # Models often send null instead of [] when there are no items (e.g. a non-invoice).
         return [] if v is None else v
+
+    @field_validator("currency", mode="before")
+    @classmethod
+    def normalize_currency(cls, v: object) -> object:
+        # Column is VARCHAR(3): "rupiah" -> "IDR", "usd" -> "USD", anything else unusable -> null.
+        if not isinstance(v, str):
+            return v
+        code = v.strip().upper().rstrip(".")
+        code = CURRENCY_ALIASES.get(code, code)
+        return code if re.fullmatch(r"[A-Z]{3}", code) else None
+
+    @field_validator(*MAX_LENGTHS, mode="after")
+    @classmethod
+    def truncate_to_column(cls, v: str | None, info) -> str | None:
+        return v[: MAX_LENGTHS[info.field_name]] if v else v
 
     @field_validator("invoice_date", mode="before")
     @classmethod
