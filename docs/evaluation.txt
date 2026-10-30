@@ -1,0 +1,10 @@
+invoice_medika.pdf: OK [8.1s]
+invoice_farma.pdf: OK [6.9s]
+invoice_lab.jpg: OK [7.3s]
+
+Field accuracy:
+  vendor_name     3/3
+  invoice_number  3/3
+  invoice_date    3/3
+  total_amount    3/3
+  currency        3/3
