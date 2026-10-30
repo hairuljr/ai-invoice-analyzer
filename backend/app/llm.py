@@ -9,7 +9,7 @@ import logging
 from functools import cache
 from pathlib import Path
 
-from openai import OpenAI, OpenAIError
+from openai import OpenAI
 from pydantic import ValidationError
 
 from .config import settings
@@ -76,11 +76,12 @@ def extract_invoice(data: bytes, mime: str) -> InvoiceExtraction:
                     },
                 },
             )
-        except OpenAIError as e:
-            logger.error("LLM request failed: %s", e)
+        except Exception as e:  # any failure talking to the AI service is a 502, never a raw 500
+            logger.error("LLM request failed: %r", e)
             raise ExtractionError(f"AI service error: {e.__class__.__name__}") from e
 
-        content = resp.choices[0].message.content or ""
+        # A proxy can answer 200 with no choices; treat it like empty output (retried, then 502).
+        content = (resp.choices[0].message.content if resp.choices else None) or ""
         try:
             return InvoiceExtraction.model_validate_json(_strip_code_fence(content))
         except ValidationError:

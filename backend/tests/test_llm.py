@@ -65,3 +65,21 @@ def test_retries_once_on_invalid_output(monkeypatch):
 def test_null_line_items_become_empty_list():
     # Real model output for a non-invoice document.
     assert InvoiceExtraction(is_invoice=False, line_items=None, summary="Bukan invoice.").line_items == []
+
+
+def test_empty_choices_raise_extraction_error(monkeypatch):
+    response = SimpleNamespace(choices=[])
+    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=lambda **kwargs: response)))
+    monkeypatch.setattr(llm, "get_client", lambda: client)
+    with pytest.raises(ExtractionError):
+        extract_invoice(b"%PDF-", "application/pdf")
+
+
+def test_non_openai_exception_becomes_extraction_error(monkeypatch):
+    def create(**kwargs):
+        raise ValueError("proxy sent something unexpected")
+
+    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    monkeypatch.setattr(llm, "get_client", lambda: client)
+    with pytest.raises(ExtractionError, match="ValueError"):
+        extract_invoice(b"%PDF-", "application/pdf")
