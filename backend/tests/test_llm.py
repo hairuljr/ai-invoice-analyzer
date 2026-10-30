@@ -60,3 +60,8 @@ def test_retries_once_on_invalid_output(monkeypatch):
     monkeypatch.setattr(llm, "get_client", lambda: client)
     assert extract_invoice(b"%PDF-", "application/pdf").vendor_name == "PT Medika"
     assert len(calls) == 2
+
+
+def test_null_line_items_become_empty_list():
+    # Real model output for a non-invoice document.
+    assert InvoiceExtraction(is_invoice=False, line_items=None, summary="Bukan invoice.").line_items == []

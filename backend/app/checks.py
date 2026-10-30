@@ -41,10 +41,10 @@ def review_notes(ext: InvoiceExtraction) -> list[str]:
             notes.append(f"Line items add up to {_fmt(sum(amounts))}, but the subtotal is {_fmt(ext.subtotal)}.")
 
     if ext.subtotal is not None and ext.total_amount is not None:
-        expected_total = ext.subtotal + (ext.tax_amount or 0)
+        expected_total = ext.subtotal - (ext.discount_amount or 0) + (ext.tax_amount or 0)
         if not _close(expected_total, ext.total_amount):
             notes.append(
-                f"Subtotal + tax = {_fmt(expected_total)}, but the total is {_fmt(ext.total_amount)}."
+                f"Subtotal - discount + tax = {_fmt(expected_total)}, but the total is {_fmt(ext.total_amount)}."
             )
 
     return notes

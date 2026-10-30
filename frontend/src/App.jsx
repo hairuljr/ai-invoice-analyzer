@@ -92,6 +92,7 @@ function ResultCard({ invoice, reused }) {
     ["Invoice date", invoice.invoice_date],
     ["Items", invoice.item_description],
     ["Subtotal", formatAmount(invoice.subtotal, invoice.currency)],
+    ["Discount", formatAmount(invoice.discount_amount, invoice.currency)],
     ["Tax", formatAmount(invoice.tax_amount, invoice.currency)],
     ["Total amount", formatAmount(invoice.total_amount, invoice.currency)],
     ["File", invoice.original_filename],

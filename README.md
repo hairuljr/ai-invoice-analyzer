@@ -18,11 +18,13 @@ Browser (React)                 FastAPI                                LLM (Gemi
 ## What it does
 
 - **Extracts** `vendor_name`, `invoice_number`, `invoice_date` (ISO), `currency`, `line_items`
-  (description, quantity, unit price, amount), `subtotal`, `tax_amount`, `total_amount`, `item_description`,
-  and a 1-2 sentence `summary` in Bahasa Indonesia. Fields the model cannot find are stored as `null`; it is
-  instructed never to guess.
+  (description, quantity, unit price, amount), `subtotal`, `discount_amount`, `tax_amount`, `total_amount`,
+  `item_description`, and a 1-2 sentence `summary` in Bahasa Indonesia. Fields the model cannot find are stored
+  as `null`; it is instructed never to guess. `total_amount` is the grand total (after discount and tax), not
+  the remaining balance after a down payment.
+- **Rejects non-invoices.** The model also answers `is_invoice`; a letter or memo gets `422` and is not stored.
 - **Verifies instead of trusting.** The LLM only reads; code checks the arithmetic (qty x unit price = amount,
-  sum of lines = subtotal, subtotal + tax = total), required fields, and whether the same vendor + invoice
+  sum of lines = subtotal, subtotal - discount + tax = total), required fields, and whether the same vendor + invoice
   number was already recorded. Any problem sets `needs_review = true` with human-readable `review_notes`. The
   invoice is still saved, so finance gets the data but knows to check it.
 - **Does not pay twice.** A SHA-256 hash of the file is stored; uploading the identical file again returns the
@@ -109,7 +111,7 @@ Interactive API docs: http://localhost:8000/docs. Real recorded responses: [docs
 
 | Endpoint | Success | Errors |
 |---|---|---|
-| `POST /api/invoices/process` (multipart `file`) | `201` + stored invoice; `200` if this exact file was processed before | `400` empty, `413` too large, `415` wrong type or content does not match extension, `502` AI failed or returned invalid output, `503` database unavailable |
+| `POST /api/invoices/process` (multipart `file`) | `201` + stored invoice; `200` if this exact file was processed before | `400` empty, `413` too large, `415` wrong type or content does not match extension, `422` not an invoice, `502` AI failed or returned invalid output, `503` database unavailable |
 | `GET /api/invoices?limit=50` | `200` list, newest first | |
 | `GET /api/invoices/{id}` | `200` | `404` |
 | `GET /health` | `200` (checks the database) | `503` |
@@ -120,19 +122,23 @@ One table, `invoices` ([db/schema.sql](db/schema.sql)): extracted fields (nullab
 `review_notes` (JSONB), `needs_review`, `summary`, `original_filename`, `file_sha256` (indexed, for reuse), and
 `created_at` (indexed, for history ordering). Amounts are `NUMERIC(18,2)` to avoid floating-point errors on
 money, and `invoice_date` is a real `DATE`. A database created from an earlier version is upgraded in place with
-`psql -d ai_invoice_analyzer -f db/migrations/002_review_and_line_items.sql` (idempotent, non-destructive).
+the scripts in `db/migrations/`, in order (idempotent, non-destructive).
 
 ## Tests and evaluation
 
 ```bash
 cd backend
-.venv/bin/python -m pytest              # 33 tests, no API key or Postgres needed (LLM mocked, SQLite in memory)
+.venv/bin/python -m pytest              # 36 tests, no API key or Postgres needed (LLM mocked, SQLite in memory)
 .venv/bin/python -m scripts.evaluate     # real LLM vs samples/expected.json golden set
 ```
 
 Latest evaluation ([docs/evaluation.txt](docs/evaluation.txt)): 4/4 invoices correct on all seven structured
 fields, and the review flag is right on all 4 (the wrong-total invoice is flagged, the clean ones are not).
 About 9 seconds per invoice.
+
+Edge cases ([docs/edge_cases.md](docs/edge_cases.md)): multi-page invoice with 60 lines, discount and down
+payment; USD with decimals; Indonesian decimal comma; missing fields; a non-invoice; skewed scan; low-res photo;
+and five invalid uploads. All handled without a crash; see the report for each result.
 
 ## Key decisions
 
@@ -143,7 +149,7 @@ validation, Numeric money, and a small React app served by FastAPI.
 ## Limitations
 
 - Synchronous processing: the request waits for the LLM (usually 7-10 s, occasionally much longer through the proxy).
-- Evaluation covers 4 generated invoices only. Real scans (skewed, handwritten, multi-page) are untested.
+- Evaluation covers 4 golden invoices plus 13 edge cases, all generated. Real-world scans and handwriting are untested.
 - The checks catch inconsistent numbers, not a consistently misread invoice (e.g. a wrong vendor name).
 - Uploaded files are not stored, only the extracted data and the file hash.
 - No auth, no edit/delete or "mark as reviewed", no pagination beyond `limit`.

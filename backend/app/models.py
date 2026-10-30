@@ -25,6 +25,7 @@ class Invoice(Base):
     line_items: Mapped[list[dict]] = mapped_column(JsonType, default=list)
     # Numeric, not float: money must not suffer binary rounding errors.
     subtotal: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
+    discount_amount: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
     tax_amount: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
     total_amount: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
     item_description: Mapped[str | None] = mapped_column(Text)

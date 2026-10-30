@@ -20,3 +20,8 @@
 | SHA-256 of the file; identical upload returns stored result (200) | No second LLM call for the same file: lower cost and latency, consistent answers | Always re-process |
 | Same vendor + invoice number is flagged, not blocked | Could be a real duplicate (double payment risk) or a legitimate re-scan; a person decides | Unique constraint |
 | Retry once when the model's JSON fails validation | Sampling can differ between calls; a second try fixes most format slips cheaply | No retry (more 502s) or many retries (cost, latency) |
+| `total_amount` = grand total, not "amount due" after a down payment | The invoice value is what finance records; a down payment is a payment, not a change to the invoice | Store the remaining balance (would make totals depend on payment history) |
+| Discount is a separate field in the total check | A real multi-page invoice with a 5% discount was falsely flagged until discount was modelled | Ignore discounts (false positives) |
+| Non-invoice -> `422`, not stored | Keeps finance history clean; the AI's explanation is returned to the user | Store with all fields null (junk rows) |
+| A JPEG renamed to `.pdf` is rejected (`415`) | Extension and content must agree; a mismatch usually means a corrupt or tampered file, and rejecting is the safer default | Accept and use the sniffed type |
+| Lists that the model returns as `null` become `[]` | The model sent `line_items: null` for a non-invoice and the whole extraction failed; fixed in the schema so it holds for any model | Only tell the prompt to use `[]` |

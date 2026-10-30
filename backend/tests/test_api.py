@@ -121,3 +121,15 @@ def test_wrong_total_is_stored_with_review_flag(client, monkeypatch):
     assert body["needs_review"] is True
     assert "total is 7,000,000" in body["review_notes"][0]
     assert client.get(f"/api/invoices/{body['id']}").json()["review_notes"] == body["review_notes"]
+
+
+def test_non_invoice_is_rejected_with_422_and_not_stored(client, monkeypatch):
+    monkeypatch.setattr(
+        main,
+        "extract_invoice",
+        lambda data, mime: InvoiceExtraction(is_invoice=False, summary="Surat edaran internal tentang cuti bersama."),
+    )
+    response = upload(client)
+    assert response.status_code == 422
+    assert "does not look like an invoice" in response.json()["detail"]
+    assert client.get("/api/invoices").json() == []

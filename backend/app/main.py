@@ -87,13 +87,17 @@ def process_invoice(file: UploadFile, response: Response, db: Session = Depends(
     except ExtractionError as e:
         raise HTTPException(502, f"Could not extract invoice data: {e}")
 
+    # Not stored: a non-invoice in the invoices table would be junk data in finance's history.
+    if not extracted.is_invoice:
+        raise HTTPException(422, f"This document does not look like an invoice. AI says: {extracted.summary}")
+
     notes = review_notes(extracted)
     duplicate = find_same_invoice(db, extracted.vendor_name, extracted.invoice_number)
     if duplicate:
         notes.append(f"Possible duplicate of invoice #{duplicate.id} (same vendor and invoice number).")
 
     invoice = models.Invoice(
-        **extracted.model_dump(),
+        **extracted.model_dump(exclude={"is_invoice"}),
         needs_review=bool(notes),
         review_notes=notes,
         original_filename=filename,

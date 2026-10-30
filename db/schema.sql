@@ -1,7 +1,7 @@
 -- Init script for PostgreSQL. The app also creates this table on startup
 -- (SQLAlchemy create_all), so running this file manually is optional.
 -- Usage: psql -d ai_invoice_analyzer -f db/schema.sql
--- Upgrading a database created before review fields existed: db/migrations/002_review_and_line_items.sql
+-- Upgrading a database created by an earlier version: run db/migrations/*.sql in order.
 
 CREATE TABLE IF NOT EXISTS invoices (
     id                SERIAL PRIMARY KEY,
@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     currency          VARCHAR(3),
     line_items        JSONB NOT NULL DEFAULT '[]',
     subtotal          NUMERIC(18, 2),
+    discount_amount   NUMERIC(18, 2),
     tax_amount        NUMERIC(18, 2),
     total_amount      NUMERIC(18, 2),
     item_description  TEXT,

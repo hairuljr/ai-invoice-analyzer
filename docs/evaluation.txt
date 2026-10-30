@@ -1,7 +1,7 @@
-invoice_medika.pdf: OK [8.8s]
-invoice_farma.pdf: OK [8.8s]
-invoice_lab.jpg: OK [9.8s]
-invoice_wrong_total.pdf: OK [9.0s]
+invoice_medika.pdf: OK [9.9s]
+invoice_farma.pdf: OK [9.0s]
+invoice_lab.jpg: OK [9.6s]
+invoice_wrong_total.pdf: OK [8.2s]
 
 Field accuracy:
   vendor_name     4/4
