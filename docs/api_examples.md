@@ -30,14 +30,15 @@ HTTP 201
     }
   ],
   "subtotal": 5850000.0,
+  "discount_amount": null,
   "tax_amount": 643500.0,
   "total_amount": 6493500.0,
   "item_description": "Paracetamol 500 mg (strip) dan Amoxicillin 500 mg (strip)",
-  "summary": "CV Farma Nusantara menagih pembayaran untuk Paracetamol 500 mg dan Amoxicillin 500 mg kepada Rumah Sakit Contoh sejumlah Rp 6.493.500.",
+  "summary": "CV Farma Nusantara menagihkan pengadaan obat Paracetamol dan Amoxicillin kepada Rumah Sakit Contoh sejumlah Rp 6.493.500.",
   "needs_review": false,
   "review_notes": [],
   "original_filename": "invoice_farma.pdf",
-  "created_at": "2026-10-30T13:43:05.011114+07:00"
+  "created_at": "2026-10-30T14:01:42.514366+07:00"
 }
 ```
 
@@ -71,14 +72,15 @@ HTTP 201
     }
   ],
   "subtotal": 10900000.0,
+  "discount_amount": null,
   "tax_amount": 1199000.0,
   "total_amount": 12099000.0,
   "item_description": "Reagen hematologi 1 L dan kalibrasi alat analyzer",
-  "summary": "PT Lab Diagnostik Prima menagihkan pembelian reagen hematologi dan jasa kalibrasi alat analyzer dengan total sebesar Rp 12.099.000.",
+  "summary": "PT Lab Diagnostik Prima menagihkan pembelian reagen hematologi dan jasa kalibrasi alat analyzer kepada Rumah Sakit Contoh dengan total tagihan sebesar Rp 12.099.000.",
   "needs_review": false,
   "review_notes": [],
   "original_filename": "invoice_lab.jpg",
-  "created_at": "2026-10-30T13:43:13.689963+07:00"
+  "created_at": "2026-10-30T14:01:52.384720+07:00"
 }
 ```
 
@@ -114,16 +116,17 @@ HTTP 201
     }
   ],
   "subtotal": 6300000.0,
+  "discount_amount": null,
   "tax_amount": 693000.0,
   "total_amount": 7000000.0,
   "item_description": "Jasa sterilisasi instrumen dan indikator kimia sterilisasi",
-  "summary": "PT Sarana Steril Indonesia menagihkan biaya jasa sterilisasi instrumen dan indikator kimia sterilisasi dengan total tagihan sebesar Rp 7.000.000.",
+  "summary": "PT Sarana Steril Indonesia menagihkan jasa sterilisasi instrumen dan indikator kimia sterilisasi kepada Rumah Sakit Contoh dengan total tagihan Rp 7.000.000.",
   "needs_review": true,
   "review_notes": [
-    "Subtotal + tax = 6,993,000, but the total is 7,000,000."
+    "Subtotal - discount + tax = 6,993,000, but the total is 7,000,000."
   ],
   "original_filename": "invoice_wrong_total.pdf",
-  "created_at": "2026-10-30T13:43:22.342328+07:00"
+  "created_at": "2026-10-30T14:02:00.121845+07:00"
 }
 ```
 
@@ -159,16 +162,33 @@ HTTP 200
     }
   ],
   "subtotal": 6300000.0,
+  "discount_amount": null,
   "tax_amount": 693000.0,
   "total_amount": 7000000.0,
   "item_description": "Jasa sterilisasi instrumen dan indikator kimia sterilisasi",
-  "summary": "PT Sarana Steril Indonesia menagihkan biaya jasa sterilisasi instrumen dan indikator kimia sterilisasi dengan total tagihan sebesar Rp 7.000.000.",
+  "summary": "PT Sarana Steril Indonesia menagihkan jasa sterilisasi instrumen dan indikator kimia sterilisasi kepada Rumah Sakit Contoh dengan total tagihan Rp 7.000.000.",
   "needs_review": true,
   "review_notes": [
-    "Subtotal + tax = 6,993,000, but the total is 7,000,000."
+    "Subtotal - discount + tax = 6,993,000, but the total is 7,000,000."
   ],
   "original_filename": "invoice_wrong_total.pdf",
-  "created_at": "2026-10-30T13:43:22.342328+07:00"
+  "created_at": "2026-10-30T14:02:00.121845+07:00"
+}
+```
+
+## Error: document is not an invoice
+
+The model reports `is_invoice: false`; nothing is stored.
+
+```bash
+curl -F 'file=@samples/not_an_invoice_memo.pdf' http://localhost:8000/api/invoices/process
+```
+
+HTTP 422
+
+```json
+{
+  "detail": "This document does not look like an invoice. AI says: Dokumen ini bukan merupakan faktur atau tagihan, melainkan Surat Edaran Internal mengenai jadwal piket akhir tahun dari Bagian SDM Rumah Sakit Contoh (dummy)."
 }
 ```
 
@@ -203,16 +223,17 @@ HTTP 200
       }
     ],
     "subtotal": 6300000.0,
+    "discount_amount": null,
     "tax_amount": 693000.0,
     "total_amount": 7000000.0,
     "item_description": "Jasa sterilisasi instrumen dan indikator kimia sterilisasi",
-    "summary": "PT Sarana Steril Indonesia menagihkan biaya jasa sterilisasi instrumen dan indikator kimia sterilisasi dengan total tagihan sebesar Rp 7.000.000.",
+    "summary": "PT Sarana Steril Indonesia menagihkan jasa sterilisasi instrumen dan indikator kimia sterilisasi kepada Rumah Sakit Contoh dengan total tagihan Rp 7.000.000.",
     "needs_review": true,
     "review_notes": [
-      "Subtotal + tax = 6,993,000, but the total is 7,000,000."
+      "Subtotal - discount + tax = 6,993,000, but the total is 7,000,000."
     ],
     "original_filename": "invoice_wrong_total.pdf",
-    "created_at": "2026-10-30T13:43:22.342328+07:00"
+    "created_at": "2026-10-30T14:02:00.121845+07:00"
   },
   {
     "id": 2,
@@ -235,14 +256,15 @@ HTTP 200
       }
     ],
     "subtotal": 10900000.0,
+    "discount_amount": null,
     "tax_amount": 1199000.0,
     "total_amount": 12099000.0,
     "item_description": "Reagen hematologi 1 L dan kalibrasi alat analyzer",
-    "summary": "PT Lab Diagnostik Prima menagihkan pembelian reagen hematologi dan jasa kalibrasi alat analyzer dengan total sebesar Rp 12.099.000.",
+    "summary": "PT Lab Diagnostik Prima menagihkan pembelian reagen hematologi dan jasa kalibrasi alat analyzer kepada Rumah Sakit Contoh dengan total tagihan sebesar Rp 12.099.000.",
     "needs_review": false,
     "review_notes": [],
     "original_filename": "invoice_lab.jpg",
-    "created_at": "2026-10-30T13:43:13.689963+07:00"
+    "created_at": "2026-10-30T14:01:52.384720+07:00"
   },
   {
     "id": 1,
@@ -265,14 +287,15 @@ HTTP 200
       }
     ],
     "subtotal": 5850000.0,
+    "discount_amount": null,
     "tax_amount": 643500.0,
     "total_amount": 6493500.0,
     "item_description": "Paracetamol 500 mg (strip) dan Amoxicillin 500 mg (strip)",
-    "summary": "CV Farma Nusantara menagih pembayaran untuk Paracetamol 500 mg dan Amoxicillin 500 mg kepada Rumah Sakit Contoh sejumlah Rp 6.493.500.",
+    "summary": "CV Farma Nusantara menagihkan pengadaan obat Paracetamol dan Amoxicillin kepada Rumah Sakit Contoh sejumlah Rp 6.493.500.",
     "needs_review": false,
     "review_notes": [],
     "original_filename": "invoice_farma.pdf",
-    "created_at": "2026-10-30T13:43:05.011114+07:00"
+    "created_at": "2026-10-30T14:01:42.514366+07:00"
   }
 ]
 ```

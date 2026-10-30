@@ -134,7 +134,7 @@ def get_invoice(invoice_id: int, db: Session = Depends(get_db)):
     return invoice
 
 
-# Serve the built React app (npm run build) from the same origin, if it exists.
+# Serve the built React app (bun run build) from the same origin, if it exists.
 # Mounted last so /api routes take precedence.
 if FRONTEND_DIST.is_dir():
     app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")

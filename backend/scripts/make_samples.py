@@ -67,6 +67,25 @@ INVOICES = [
 
 TAX_RATE = 0.11
 
+# Not an invoice: the API should answer 422 and store nothing.
+MEMO_FILE = "not_an_invoice_memo.pdf"
+MEMO_ROWS = [
+    "Rumah Sakit Contoh (dummy)",
+    "",
+    "SURAT EDARAN INTERNAL",
+    "No. 045/SE/HRD/X/2026",
+    "",
+    "Perihal : Jadwal piket akhir tahun",
+    "Kepada  : Seluruh staf administrasi",
+    "",
+    "Sehubungan dengan libur akhir tahun, jadwal piket bagian",
+    "administrasi akan dibagikan oleh masing-masing kepala unit",
+    "paling lambat 15 Desember 2026.",
+    "",
+    "Hormat kami,",
+    "Bagian SDM",
+]
+
 
 def rupiah(n: float) -> str:
     return "Rp " + f"{n:,.0f}".replace(",", ".")
@@ -129,6 +148,8 @@ def main() -> None:
         else:
             write_pdf(path, rows)
         print("wrote", path)
+    write_pdf(OUT / MEMO_FILE, MEMO_ROWS)
+    print("wrote", OUT / MEMO_FILE)
 
 
 if __name__ == "__main__":

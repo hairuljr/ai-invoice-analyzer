@@ -47,7 +47,8 @@ backend/
   tests/           unit + API integration tests (LLM mocked)
 frontend/          React (Vite): upload form, result card, history table
 db/schema.sql      init script for PostgreSQL (db/migrations/ upgrades an older table)
-samples/           dummy invoices (fictional data, one with a deliberately wrong total) + expected.json golden set
+samples/           dummy invoices (fictional data, one with a deliberately wrong total), a non-invoice memo,
+                   and the expected.json golden set
 docs/              recorded API responses and evaluation output
 ```
 
@@ -96,7 +97,7 @@ and open http://localhost:5173 (Vite proxies `/api` to port 8000).
 UI: open http://localhost:8000, choose a file from `samples/`, click **Process invoice**. The result card
 shows the extracted fields, line items and a review badge; the history table below lists all invoices (click
 a row to view it). Try `samples/invoice_wrong_total.pdf` to see an invoice flagged **Needs review**, and upload
-the same file twice to see the stored result reused.
+the same file twice to see the stored result reused. `samples/not_an_invoice_memo.pdf` is rejected with `422`.
 
 API:
 
